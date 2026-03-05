@@ -5,3 +5,7 @@ mcp_state.json
 decoded_state.json
 .vscode
 *.log
+
+.agents
+.specify
+docs
