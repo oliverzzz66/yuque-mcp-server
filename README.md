@@ -1,5 +1,9 @@
 # Yuque MCP Server 语雀个人助手
 
+> **⚠️ 免责声明 (Disclaimer)** 
+> 本项目仅供个人学习与自动化测试使用，不代表官方立场。本项目基于语雀网页版内部接口开发，可能因语雀官方调整而随时失效。
+> **请勿用于高并发、商业化或恶意抓取场景**。因滥用本项目导致的一切语雀封号或法律后果，由使用者自行承担，与作者无关！
+
 [![GitHub License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![Model Context Protocol](https://img.shields.io/badge/MCP-Supported-green.svg)](https://modelcontextprotocol.io/)
@@ -53,7 +57,7 @@ npm run build
     "yuque-assistant": {
       "command": "node",
       "args": [
-        "E:/绝对路径/您的存放位置/yuque-mcp-server/dist/index.js"
+        "C:/完整的绝对路径/.../yuque-mcp-server/dist/index.js"
       ],
       "env": {
         "YUQUE_COOKIE": "复制的大段Cookie字符串粘贴在此"
@@ -68,14 +72,7 @@ npm run build
 2. 点击 **+ Add New MCP Server**。
 3. **Name**: `yuque-assistant`
 4. **Type**: 选择 `command`
-5. **Command**: 输入 `node E:/绝对路径/.../dist/index.js` (请按自身情况替换具体路径)
+5. **Command**: 输入 `node C:/完整的绝对路径/.../yuque-mcp-server/dist/index.js` (请严格按自身情况替换为准确的绝对路径)
 6. 添加一个环境变量，**Key** 为 `YUQUE_COOKIE`，**Value** 为刚才取到的长 Cookie 字符串。
 7. 保存并刷新状态，看到绿灯亮起即刻享用！
 
----
-
-## 🛠 开发协议
-
-*本项目脱胎于完全开源的基于 SpecKit 开发法和 Antigravity 助手的实践。去除了所有的中间产物状态追踪文件，仅保留了标准的 Node.js 源码部分，任何人都可以基于此进行二次开发和补充更多的工具接入。*
-
-如果有 BUG 或更多工具诉求，欢迎 PR。
