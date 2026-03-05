@@ -1,0 +1,44 @@
+# Yuque MCP Server 编程助手规则 (Cursor Rules)
+
+## 🎯 项目定位
+本项目是一个基于 Model Context Protocol (MCP) 的语雀 (Yuque) 助手服务。
+核心目标是通过网页端 Cookie 绕过官方 API 限制，调用语雀**内部/前端 API (Internal API)** 来管理知识库和发布笔记。
+
+## 🛠️ 技术栈
+- **运行时环境**: Node.js (v18+)
+- **开发语言**: TypeScript (Strict Mode)
+- **模块规范**: ESM (`"type": "module"`)
+- **核心依赖**:
+  - `@modelcontextprotocol/sdk` (实现 MCP 协议端点)
+  - `axios` (处理 HTTP 通信)
+  - `dotenv` (环境变量管理)
+
+## 🔐 鉴权与 HTTP 客户端规范
+1. **Cookie 鉴权**: 所有的接口请求需携带从环境变量 `YUQUE_COOKIE` 获取的网页端 Cookie。
+2. **CSRF 防护**: 必须从 `YUQUE_COOKIE` 中解析出 `ctoken` 的值，并将其放入请求头 `x-csrf-token` 中。若是 POST/PUT/DELETE 请求，必须携带该 Header，否则会被语雀 400/403 拦截。
+3. **User-Agent & Referer**: 所有的请求头必须伪装成常规浏览器（配置通用的 User-Agent 和 `Referer: https://www.yuque.com/`）。
+4. **Base URL**: `https://www.yuque.com/api`
+
+## 🧩 MCP Tools 实现规范
+当实现新的 MCP Tool 或修改现有 Tool 时：
+1. **输入配置**: 在 `inputSchema.properties` 中清晰定义所需的参数类型和描述，必须提供准确的 `description`。
+2. **错误处理**: 在 `CallToolRequestSchema` 处理器中，通过 `try-catch` 包裹逻辑。在 catch 块中：
+   - 如果是 AxiosError，提取 `error.response.data` 将详细服务端错误返回。
+   - 必须通过设置 `isError: true` 来响应错误请求给客户端。
+3. **输出格式**: 默认返回 `content` 数组，文本结果通常需要用 `JSON.stringify` 格式化后包装进 `{ type: "text", text: ... }` 中。
+4. **已知 API 端点 参考**:
+   - `GET /mine/personal_books`: 获取个人所有知识库。
+   - `POST /docs`: 创建新文档 (参数: `book_id`, `title`, `format: "markdown"`, `body`)。
+
+## 📝 编码与构建规范
+1. **单文件结构**: 当前业务较为纯粹，默认核心逻辑在 `src/index.ts` 进行处理；如果需要扩充更多 endpoint，考虑抽离 `src/api/` 或 `src/tools/`。
+2. **TypeScript 编译**: 
+   - 永远运行 `npm run build` 测试编译结果。
+   - 确保 `tsconfig.json` 的 `outDir` 指向 `./dist`。
+3. **日志规范**:
+   - MCP Server 通过 `stdio` 与客户端通信，这意味着**绝对不要**使用 `console.log` 打印调试信息，这会污染 JSON-RPC 协议的标准输出导致断连。
+   - 需要打印调试、错误日志时，**必须使用 `console.error()`**，内容会被记录到 MCP 客户端的错误日志中而不会破坏协议。
+
+## 💡 开发指南
+- 如果你需要增加“查看某篇文档内容”的功能：应去逆向抓包 `/docs/{id}` 或相关内部端点。
+- 当语雀接口发生变动（例如参数更新）时，优先检查 Cookie 是否过期、`x-csrf-token` 是否解析正确，或者请求头的校验逻辑。
