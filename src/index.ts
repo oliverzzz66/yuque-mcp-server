@@ -111,6 +111,25 @@ const createNoteTool: Tool = {
     },
 };
 
+const listDocsTool: Tool = {
+    name: "list_yuque_docs",
+    description: "Get the list of documents within a specific repository (book_id), optionally filtering by document title.",
+    inputSchema: {
+        type: "object",
+        properties: {
+            book_id: {
+                type: "number",
+                description: "The ID of the knowledge base (book) to list documents from."
+            },
+            title_query: {
+                type: "string",
+                description: "Optional title keyword to search for a specific document. Returns matched documents including their slug."
+            }
+        },
+        required: ["book_id"]
+    }
+};
+
 const readDocTool: Tool = {
     name: "read_yuque_doc",
     description: "Read a specific document's Markdown content by specifying its knowledge base ID (repo_id) and URL slug. Automatically resolves cross-domain organizations if active space is set.",
@@ -138,7 +157,7 @@ const server = new Server(
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
-        tools: [listReposTool, createNoteTool, listSpacesTool, switchSpaceTool, readDocTool],
+        tools: [listReposTool, createNoteTool, listSpacesTool, switchSpaceTool, readDocTool, listDocsTool],
     };
 });
 
@@ -310,6 +329,75 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     {
                         type: "text",
                         text: typeof body === 'string' ? body : JSON.stringify(body, null, 2),
+                    },
+                ],
+            };
+        }
+
+        if (request.params.name === "list_yuque_docs") {
+            const args = (request.params.arguments || {}) as {
+                book_id?: number;
+                title_query?: string;
+            };
+
+            if (!args.book_id) {
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: "Error: book_id is required for list_yuque_docs.",
+                        },
+                    ],
+                    isError: true
+                };
+            }
+
+            const { book_id, title_query } = args;
+
+            const state = readState();
+            let reqBaseURL = "https://www.yuque.com/api";
+            if (state.active_space_host) {
+                reqBaseURL = `${state.active_space_host}/api`;
+            }
+
+            // Using internal API to fetch the docs list for a book
+            const response = await yuqueClient.get(`/docs?book_id=${book_id}`, { baseURL: reqBaseURL });
+            let docs = response.data?.data || response.data || [];
+            if (!Array.isArray(docs)) {
+                // Try to grab from a nested list if they changed the internal payload structure
+                docs = docs.list || [];
+            }
+            // Need to clean the object, just keeping core ID mapping properties to prevent large token usage
+            let results = docs.map((doc: any) => ({
+                id: doc.id,
+                slug: doc.slug,
+                title: doc.title,
+                status: doc.status,
+                created_at: doc.created_at,
+                updated_at: doc.updated_at
+            }));
+
+            if (title_query) {
+                const queryLower = title_query.toLowerCase();
+                results = results.filter((doc: any) => doc.title && doc.title.toLowerCase().includes(queryLower));
+            }
+
+            if (results.length === 0 && title_query) {
+                return {
+                    content: [
+                        {
+                            type: "text",
+                            text: `No documents found matching the title keyword: '${title_query}' in repository ${book_id}.`,
+                        },
+                    ],
+                };
+            }
+
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify(results, null, 2),
                     },
                 ],
             };
