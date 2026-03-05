@@ -10,13 +10,23 @@
 
 这是一个基于 [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) 的语雀服务代理，旨在让具备 MCP Client 能力的大型语言模型（如 Claude Desktop、Cursor、Cline、Windsurf 等）能够无缝读取、检索和管理您的 [语雀 (Yuque)](https://www.yuque.com/) 知识库内容。
 
-## 🌟 核心功能
+## 🌟 核心功能 (MCP Tools)
 
-通过将本服务挂载到您的 AI 助手上，AI 即可免密直接访问您的语雀进行以下操作：
-- **空间感知与跨域路由 (`list_yuque_spaces`, `switch_yuque_space`)**: 漫游并切换您加入的组织或团队子命名空间 (Subdomains)，支持无缝读取团队文档。
-- **知识库探索 (`list_yuque_repos`)**: 获取您当前上下文空间下的所有团队与个人知识库目录。
-- **文档深度读取 (`read_yuque_doc`)**: 给出 Repo ID 与文章 URL Slug，即可直接获取无干扰的全量 **Markdown 原文**输入给模型，可用于后续的参考理解或重构研判。
-- **内容发布 (`create_yuque_note`)**: 在指定的文档库中，根据 AI 生成的内容自动排版并原样发布新文档到您的语雀。
+通过将本服务挂载到您的 AI 助手上，AI 将获得以下 5 个标准工具（Tools），从而可以直接访问您的语雀进行操作：
+
+### 1. 空间漫游与感知
+- **`list_yuque_spaces`**: 获取当前登录用户可访问的所有个人和企业空间（Organizations）。AI 可借此了解您的可用团队上下文和专属域名（Host）。
+- **`switch_yuque_space`**: 设定当前系统环境的操作空间上下文（自动解决企业级的跨域 CORS 鉴权隔离）。
+  - *输入参数*: `space_id`, `space_login`, `space_host`
+
+### 2. 知识库管理
+- **`list_yuque_repos`**: 列出在当前已被激活的上下文空间下的所有图文知识库目录，以获取目标 `book_id`。
+
+### 3. 文档级读写
+- **`read_yuque_doc`**: 直接抓取并解析某篇网络文档，剥离复杂的无用 JSON 结构，并返回干净的全量 **Markdown 原文** 给 AI 供其分析、理解或重构。
+  - *输入参数*: `repo_id` (知识库ID), `doc_slug` (文档URL标识符)
+- **`create_yuque_note`**: AI 归纳、总结或生成的代码设计可以直接一键排版，原样持久化发布到您的语雀空间内。
+  - *输入参数*: `book_id` (知识库ID), `title` (标题), `body` (Markdown正文)
 
 ## 📦 环境要求
 
